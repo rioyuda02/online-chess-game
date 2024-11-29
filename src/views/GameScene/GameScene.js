@@ -1587,43 +1587,49 @@ export default class Scene extends Component {
                 const newMesh = {};
                 newMesh.position = item.position;
                 newMesh.type = item.type;
-
-                if( newMesh.type !== heroItems['thunderstorm'] ) {
-                    let texture;
-                    if( newMesh.type === heroItems['iceWall'] ) {
-                        texture = new THREE.TextureLoader().load(iceWall);
-                    } else if( newMesh.type === heroItems['petrify'] ) {
-                        texture = new THREE.TextureLoader().load(petrify);
-                    } else if( newMesh.type === heroItems['jumpyShoe'] ) {
-                        texture = new THREE.TextureLoader().load(jumpyShoe);
-                    } else if( newMesh.type === heroItems['springPad'] ) {
-                        texture = new THREE.TextureLoader().load(springPad);
-                    } else if( newMesh.type === heroItems['thunderstorm'] ) {
-                        texture = new THREE.TextureLoader().load(thunderstorm);
+                // TODO: Optimize this
+                if (newMesh.type !== heroItems.thunderstorm) {
+                    const getTexture = (type) => {
+                        switch(type) {
+                            case heroItems.iceWall: return new THREE.TextureLoader().load(iceWall);
+                            case heroItems.petrify: return new THREE.TextureLoader().load(petrify);
+                            case heroItems.jumpyShoe: return new THREE.TextureLoader().load(jumpyShoe);
+                            case heroItems.springPad: return new THREE.TextureLoader().load(springPad);
+                            case heroItems.thunderstorm: return new THREE.TextureLoader().load(thunderstorm);
+                            default: return null;
+                        }
+                    };
+                
+                    const texture = getTexture(newMesh.type);
+                    if (texture) {
+                        const itemMesh = new THREE.Mesh(
+                            new THREE.PlaneBufferGeometry(0.8, 0.8, 100, 100),
+                            new THREE.MeshStandardMaterial({
+                                side: THREE.DoubleSide,
+                                roughness: 1,
+                                metalness: 0,
+                                refractionRatio: 0,
+                                map: texture,
+                                transparent: true,
+                            })
+                        );
+                
+                        const rotationX = this.side === 'white' ? -90 : 90;
+                        const rotationY = this.side === 'white' ? 0 : 180;
+                        itemMesh.rotateX(ang2Rad(rotationX));
+                        itemMesh.rotateY(ang2Rad(rotationY));
+                
+                        const itemIndex = getMatrixIndexFromFen(newMesh.position);
+                        itemMesh.position.set(
+                            itemIndex.colIndex * tileSize - tileSize * 3.5,
+                            0.6,
+                            -(itemIndex.rowIndex * tileSize - tileSize * 3.5)
+                        );
+                
+                        this.scene.add(itemMesh);
+                        newMesh.mesh = itemMesh;
+                        this.itemMeshes.push(newMesh);
                     }
-    
-                    const itemGeo = new THREE.PlaneBufferGeometry(0.8, 0.8, 100, 100)
-                    const itemMaterial = new THREE.MeshStandardMaterial({
-                        side: THREE.DoubleSide,
-                        roughness: 1,
-                        metalness: 0,
-                        refractionRatio: 0,
-                        map: texture,
-                        transparent: true,
-                    });
-                    const itemMesh = new THREE.Mesh( itemGeo, itemMaterial );
-
-                    itemMesh.rotateX( ang2Rad( this.side === 'white' ? -90 : 90) );
-                    itemMesh.rotateY( ang2Rad( this.side === 'white' ? 0 : 180 ) );
-    
-                    const itemIndex = getMatrixIndexFromFen( newMesh.position );
-                    itemMesh.position.set( itemIndex.colIndex * tileSize - tileSize * 3.5, 0.6, -( itemIndex.rowIndex * tileSize - tileSize * 3.5 ) );
-    
-                    this.scene.add(itemMesh);
-    
-                    newMesh.mesh = itemMesh;
-    
-                    this.itemMeshes.push( newMesh );
                 }
             })
         }
